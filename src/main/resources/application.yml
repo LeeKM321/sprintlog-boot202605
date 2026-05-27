@@ -5,11 +5,15 @@ spring:
   application:
     name: sprintlog-boot
 
+  profiles:
+    active: prod
+
 server:
   port: 8080
 
 sprintlog:
   welcome-message: "SprintLog Boot - 외부 설정 시연(기본)"
   sample-data:
-    enabled: false
+    enabled: true
     count: 4
+

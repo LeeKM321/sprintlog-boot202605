@@ -1,6 +1,7 @@
 package com.sprintlog.sprintlogboot.controller;
 
 import com.sprintlog.sprintlogboot.domain.*;
+import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
@@ -97,9 +98,33 @@ public class ActivityController {
 
     // 활동 수정. 자원 식별은 Path(/{id}), 변경할 내용은 본문(UpdateActivityRequest)
     // 대상이 없으면 404, 있으면 제목, 공개여부를 변경하고 200.
+    @PatchMapping("/{id}")
+    public ResponseEntity<LearningActivity> update(@PathVariable Long id,
+                                                   @Valid @RequestBody UpdateActivityRequest request) {
+
+        Optional<LearningActivity> found = repository.findFirst(activity -> activity.getId() == id);
+        if (found.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        LearningActivity activity = found.get();
+        activity.changeTitle(request.title());
+        if (request.visibility() == Visibility.PUBLIC) {
+            activity.openToPublic();
+        } else {
+            activity.hideFromPublic();
+        }
+        repository.update(activity);
+        return ResponseEntity.ok().body(activity);
+    }
 
 
     // 활동 삭제. 성공 시 본문 없이 204 No Content, 대상이 없으면 404.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        boolean isRemoved = repository.removeById(id);
+        return isRemoved ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
 
 
 

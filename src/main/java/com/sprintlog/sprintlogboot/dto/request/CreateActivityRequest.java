@@ -27,6 +27,7 @@ public record CreateActivityRequest(
         Visibility visibility,
 
         // 선택값들
+        @NotNull
         Set<String> tags,
         String instructorName,
         int completionRate,

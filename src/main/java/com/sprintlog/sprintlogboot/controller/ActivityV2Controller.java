@@ -1,10 +1,11 @@
 package com.sprintlog.sprintlogboot.controller;
 
 import com.sprintlog.sprintlogboot.domain.*;
+import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
+import com.sprintlog.sprintlogboot.dto.request.PagedResponse;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
-import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,20 +17,19 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping({"/api/v1/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
-public class ActivityController {
+@RequestMapping("/api/v2/activities")
+public class ActivityV2Controller {
 
     private final ActivityRepository repository;
     private final ActivityDashboard dashboard;
 
     // 모든 활동 목록(페이징)
     @GetMapping
-    public ResponseEntity<List<LearningActivity>> getAll(
+    public ResponseEntity<PagedResponse<LearningActivity>> getAll(
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -48,7 +48,9 @@ public class ActivityController {
                 .limit(size)
                 .toList();
 
-        return ResponseEntity.ok().body(list);
+        // v1과의 차이: 데이터에 더해 page/size/전체 개수를 함께 내려준다.
+        PagedResponse<LearningActivity> resDto = new PagedResponse<>(list, page, size, list.size());
+        return ResponseEntity.ok().body(resDto);
     }
 
     @GetMapping("/{id}")
@@ -81,13 +83,7 @@ public class ActivityController {
         log.info("RequestParam을 통해 얻어낸 값: {}, {}, {}", tag, name, age);
 
         List<LearningActivity> list = dashboard.filterByTag(tag);
-        return ResponseEntity.ok()
-                .header("Deprecation", "true")
-                .header("Sunset", "Thu, 31 Dec 2026 23:59:59 GMT")
-                .header("Link",
-                        "<https://docs.sprintlog.example/guides/migration#search>; rel=\"deprecation\"")
-
-                .body(list);
+        return ResponseEntity.ok().body(list);
     }
 
     //  변경 작업: -- 생성(POST) / 수정(PUT) / 삭제(DELETE) ---

@@ -2,22 +2,16 @@ package com.sprintlog.sprintlogboot.controller;
 
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
+import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ProblemDetail;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +19,13 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping({"/api/v1/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
+@RequestMapping({"/api/v3/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
 @Tag(name = "활동(Activity)", description = "학습 활동 조회, 생성, 수정, 삭제 API")
 public class ActivityController implements ActivityControllerDocs {
 
@@ -39,7 +34,7 @@ public class ActivityController implements ActivityControllerDocs {
 
     // 모든 활동 목록(페이징)
     @GetMapping
-    public ResponseEntity<List<LearningActivity>> getAll(
+    public ResponseEntity<List<EntityModel<ActivityResponse>>> getAll(
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
@@ -51,20 +46,21 @@ public class ActivityController implements ActivityControllerDocs {
         };
 
 
-        List<LearningActivity> list = repository.findAll().stream()
+        List<EntityModel<ActivityResponse>> list = repository.findAll().stream()
                 .sorted(comparator)
                 .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
                 .limit(size)
+                .map(this::toModel)
                 .toList();
 
         return ResponseEntity.ok().body(list);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LearningActivity> getById(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<ActivityResponse>> getById(@PathVariable Long id) {
         LearningActivity activity = repository.findFirst(a -> a.getId() == id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
-        return ResponseEntity.ok().body(activity);
+        return ResponseEntity.ok().body(toModel(activity));
     }
 
     // 카테고리별로 그룹화된 활동 목록
@@ -76,7 +72,7 @@ public class ActivityController implements ActivityControllerDocs {
 
 
     // 활동 수 요약 정보 (전체 / 강의 / 실습 / 독서) -> ActivityDashboard
-    @RequestMapping(value = "/summary", method = RequestMethod.POST)
+    @RequestMapping(value = "/summary", method = RequestMethod.GET)
     public ResponseEntity<ActivityDashboard.Summary> getSummary() {
         return ResponseEntity.ok().body(dashboard.summarize());
     }
@@ -101,20 +97,20 @@ public class ActivityController implements ActivityControllerDocs {
 
     //  변경 작업: -- 생성(POST) / 수정(PUT) / 삭제(DELETE) ---
     @PostMapping
-    public ResponseEntity<LearningActivity> create(@Valid @RequestBody CreateActivityRequest request) {
+    public ResponseEntity<EntityModel<ActivityResponse>> create(@Valid @RequestBody CreateActivityRequest request) {
         LearningActivity activity = toActivity(request);
         repository.add(activity);
 
         // 성공 시 201 Created + Location 헤더(생성된 자원의 주소)를 함께 응답한다.
         URI location = URI.create("/api/activities/" + activity.getId());
-        return ResponseEntity.created(location).body(activity);
+        return ResponseEntity.created(location).body(toModel(activity));
     }
 
     // 활동 수정. 자원 식별은 Path(/{id}), 변경할 내용은 본문(UpdateActivityRequest)
     // 대상이 없으면 404, 있으면 제목, 공개여부를 변경하고 200.
     @PutMapping("/{id}")
-    public ResponseEntity<LearningActivity> update(@PathVariable Long id,
-                                                   @Valid @RequestBody UpdateActivityRequest request) {
+    public ResponseEntity<EntityModel<ActivityResponse>> update(@PathVariable Long id,
+                                                                @Valid @RequestBody UpdateActivityRequest request) {
 
         LearningActivity activity = repository.findFirst(a -> a.getId() == id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
@@ -126,7 +122,7 @@ public class ActivityController implements ActivityControllerDocs {
             activity.hideFromPublic();
         }
         repository.update(activity);
-        return ResponseEntity.ok().body(activity);
+        return ResponseEntity.ok().body(toModel(activity));
     }
 
 
@@ -138,6 +134,18 @@ public class ActivityController implements ActivityControllerDocs {
         }
         return ResponseEntity.noContent().build();
     }
+
+    // --- 응답 DTO + HATEOAS 링크 만들기 --------------------------------------------
+    private EntityModel<ActivityResponse> toModel(LearningActivity activity) {
+        long id = activity.getId();
+        return EntityModel.of(
+                ActivityResponse.from(activity),
+                linkTo(methodOn(ActivityController.class).getById(id)).withSelfRel(),
+                linkTo(ActivityController.class).withRel("activities"),
+                linkTo(methodOn(ActivityTagController.class).getTags(id)).withRel("tags")
+        );
+    }
+
 
 
 

@@ -25,7 +25,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping({"/api/v3/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
+@RequestMapping({"/api/v1/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
 @Tag(name = "활동(Activity)", description = "학습 활동 조회, 생성, 수정, 삭제 API")
 public class ActivityController implements ActivityControllerDocs {
 

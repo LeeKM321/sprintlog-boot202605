@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.controller;
 
+import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
@@ -57,6 +58,7 @@ public class ActivityController implements ActivityControllerDocs {
     }
 
     @GetMapping("/{id}")
+    @LogExecutionTime
     public ResponseEntity<EntityModel<ActivityResponse>> getById(@PathVariable Long id) {
         LearningActivity activity = repository.findFirst(a -> a.getId() == id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));

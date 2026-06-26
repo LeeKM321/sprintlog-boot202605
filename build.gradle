@@ -27,10 +27,13 @@ dependencies {
 
     // Spring AOP - @Aspect / @Around 로 횡단 관심사 (로깅, 실행시간) 분리.
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // [신규] Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
 
     // 테스트 코드에서도 Lombok 사용
     testCompileOnly 'org.projectlombok:lombok'

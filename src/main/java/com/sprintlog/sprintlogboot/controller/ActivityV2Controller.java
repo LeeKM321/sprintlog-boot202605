@@ -55,7 +55,7 @@ public class ActivityV2Controller {
 
     @GetMapping("/{id}")
     public ResponseEntity<LearningActivity> getById(@PathVariable Long id) {
-        LearningActivity activity = repository.findFirst(a -> a.getId() == id)
+        LearningActivity activity = repository.findById(id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
         return ResponseEntity.ok().body(activity);
     }
@@ -90,10 +90,10 @@ public class ActivityV2Controller {
     @PostMapping
     public ResponseEntity<LearningActivity> create(@Valid @RequestBody CreateActivityRequest request) {
         LearningActivity activity = toActivity(request);
-        repository.add(activity);
+        LearningActivity saved = repository.save(activity);
 
         // 성공 시 201 Created + Location 헤더(생성된 자원의 주소)를 함께 응답한다.
-        URI location = URI.create("/api/activities/" + activity.getId());
+        URI location = URI.create("/api/activities/" + saved.getId());
         return ResponseEntity.created(location).body(activity);
     }
 
@@ -103,7 +103,7 @@ public class ActivityV2Controller {
     public ResponseEntity<LearningActivity> update(@PathVariable Long id,
                                                    @Valid @RequestBody UpdateActivityRequest request) {
 
-        LearningActivity activity = repository.findFirst(a -> a.getId() == id)
+        LearningActivity activity = repository.findById(id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
 
         activity.changeTitle(request.title());
@@ -112,7 +112,7 @@ public class ActivityV2Controller {
         } else {
             activity.hideFromPublic();
         }
-        repository.update(activity);
+        repository.save(activity);
         return ResponseEntity.ok().body(activity);
     }
 
@@ -120,27 +120,26 @@ public class ActivityV2Controller {
     // 활동 삭제. 성공 시 본문 없이 204 No Content, 대상이 없으면 404.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!repository.removeById(id)) {
+        if (!repository.existsById(id)) {
             throw new ActivityNotFoundException(id);
         }
+        repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
 
 
     private LearningActivity toActivity(CreateActivityRequest request) {
-        LearningActivity activity = switch (request.type()) {
-            case LECTURE -> new LectureLog(request.title(), request.minutes(), request.visibility(), request.instructorName());
-            case PRACTICE -> new PracticeLog(request.title(), request.minutes(), request.visibility(), request.completionRate());
-            case READING -> new ReadingLog(request.title(), request.minutes(), request.visibility(), request.bookTitle());
-        };
+        LearningActivity activity = new LearningActivity(
+                request.type(), request.title(), request.minutes(), request.visibility(),
+                request.instructorName(), request.completionRate(), request.bookTitle());
 
         if (request.tags() != null) {
             request.tags().forEach(activity::addTag);
         }
-
         return activity;
     }
+
 
 }
 

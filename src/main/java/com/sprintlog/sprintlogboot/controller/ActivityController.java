@@ -7,6 +7,7 @@ import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import com.sprintlog.sprintlogboot.repository.UserRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.FileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,12 +37,15 @@ public class ActivityController implements ActivityControllerDocs {
     private final ActivityDashboard dashboard;
     private final FileService fileService;
 
+    private final UserRepository userRepository;
+
     // 모든 활동 목록(페이징)
     @GetMapping
     public ResponseEntity<List<EntityModel<ActivityResponse>>> getAll(
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long ownerId
     ) {
         Comparator<LearningActivity> comparator = switch (sort) {
             case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
@@ -49,8 +53,11 @@ public class ActivityController implements ActivityControllerDocs {
             default -> Comparator.comparing(LearningActivity::getId);
         };
 
+        List<LearningActivity> source
+                = (ownerId != null) ? repository.findByOwnerId(ownerId) : repository.findAll();
 
-        List<EntityModel<ActivityResponse>> list = repository.findAll().stream()
+
+        List<EntityModel<ActivityResponse>> list = source.stream()
                 .sorted(comparator)
                 .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
                 .limit(size)
@@ -175,6 +182,26 @@ public class ActivityController implements ActivityControllerDocs {
             request.tags().forEach(activity::addTag);
         }
         return activity;
+    }
+
+
+    @GetMapping("test-find")
+    public void testFindByUserId(@RequestParam Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("user 정보 없음"));
+
+        log.info("찾은 user의 정보: {}", user.getNickname());
+
+        // 실제 user 테이블에는 activities에 대한 정보는 아예 없음. 하지만 User 클래스에는 활동 List가 존재함
+        // 그래서 JPA는 getActivities()를 호출하면 해당 user_id로 활동들을 조회해서 User 객체 안에 추가함.
+        // 활동 List에 객체를 add하거나 delete한다고 해서 그것이 DB에 반영되지는 않는다는 점! (연관관계의 주인이 아님!)
+        // 조회 용도로 사용하는 것은 전혀 문제가 없지만 가상 컬럼을 조작하면 실제 DB와 괴리가 발생한다는 점을 알고 계세요.
+        // 실제로 단방향 연관관계를 매핑하고 나서 양방향은 추후에 고려합니다. (필요하면 구현하고, 아니라면 단방향으로만 유지)
+        List<LearningActivity> activities = user.getActivities();
+        for (LearningActivity activity : activities) {
+            log.info("활동 객체 제목: {}", activity.getTitle());
+        }
+
     }
 
 

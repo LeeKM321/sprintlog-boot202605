@@ -10,7 +10,7 @@ spring:
   jpa:
     hibernate:
       # ddl-auto=update: 엔티티에 맞춰 테이블을 자동 생성/보강(개발 편의). 운영(prod)에서는 validate 로 막는다.
-      ddl-auto: update
+      ddl-auto: create
     # 실행되는 SQL 을 콘솔에 보여준다(학습·디버깅에 유용).
 #    show-sql: true
 #    properties:

@@ -37,6 +37,9 @@ public class LearningActivity extends BaseEntity {
     @Column(length = 200)
     private String bookTitle; // READING 전용
 
+    @Column(length = 100)
+    private String attachmentFileName; // 첨부 파일의 파일명(UUID), 필수가 아니기 때문에 null을 허용
+
     // 컬렉션 자료형을 별도의 테이블로 매핑. 테이블 이름은 activity_tags, 활동 테이블과 조인할 수 있는 외래 키 이름은 activity_id
     // ElementCollection: 활동 객체를 조회할 때 tag의 조회 방식 결정
     // FetchType.EAGER: 활동 객체 조회 시 무조건 tags를 조인해서 같이 가져옴 (그렇게 선호하지는 않음)
@@ -61,6 +64,12 @@ public class LearningActivity extends BaseEntity {
         this.instructorName = normalizeInstructorName(category, instructorName);
         this.completionRate = normalizeCompletionRate(completionRate);
         this.bookTitle = bookTitle;
+    }
+
+    // 첨부 파일명을 활동 객체에 추가한다. (평범한 setter)
+    // DB에는 파일명만, 실제 파일은 디스크에 저장
+    public void attachFile(String savedFileName) {
+        this.attachmentFileName = savedFileName;
     }
 
 

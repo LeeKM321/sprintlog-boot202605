@@ -8,6 +8,7 @@ import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
+import com.sprintlog.sprintlogboot.service.FileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.Comparator;
@@ -32,6 +34,7 @@ public class ActivityController implements ActivityControllerDocs {
 
     private final ActivityRepository repository;
     private final ActivityDashboard dashboard;
+    private final FileService fileService;
 
     // 모든 활동 목록(페이징)
     @GetMapping
@@ -99,8 +102,17 @@ public class ActivityController implements ActivityControllerDocs {
 
     //  변경 작업: -- 생성(POST) / 수정(PUT) / 삭제(DELETE) ---
     @PostMapping
-    public ResponseEntity<EntityModel<ActivityResponse>> create(@Valid @RequestBody CreateActivityRequest request) {
+    public ResponseEntity<EntityModel<ActivityResponse>> create(
+            @Valid @RequestPart("data") CreateActivityRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file
+    ) {
         LearningActivity activity = toActivity(request);
+
+        if (file != null && !file.isEmpty()) {
+            String savedFileName = fileService.saveFile(file);
+            activity.attachFile(savedFileName);
+        }
+
         LearningActivity saved = repository.save(activity);
 
         // 성공 시 201 Created + Location 헤더(생성된 자원의 주소)를 함께 응답한다.

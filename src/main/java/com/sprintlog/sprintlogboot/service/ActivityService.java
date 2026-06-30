@@ -11,10 +11,10 @@ import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -48,26 +48,23 @@ public class ActivityService {
     }
 
 
-    @Transactional
-    public void deleteByTitleAndCategory(String title, ActivityCategory category) {
-        repository.deleteByTitleAndCategoryWithJPQL(title, category);
-    }
-
-    public List<LearningActivity> list(String sort, int page, int size, Long ownerId) {
-        Comparator<LearningActivity> comparator = switch (sort) {
-            case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
-            case "title" -> Comparator.comparing(LearningActivity::getTitle);
-            default -> Comparator.comparing(LearningActivity::getId);
+    public Page<LearningActivity> page(String sort, int page, int size, Long ownerId) {
+        // 기존에는 정렬 기준을 Comparator로 지정했는데, JPA에서 제공하는 페이징 기능을 사용하기 위해
+        // Sort 타입으로 정렬 기준을 지정
+        Sort sortBy = switch (sort) {
+            case "minutes" -> Sort.by(Sort.Direction.DESC, "minutes");
+            case "title" -> Sort.by("title");
+            default -> Sort.by("id");
         };
+        // 페이지 정보를 담을 객체 생성 (Pageable)
+        // 여기서는 페이지 번호가 zero-based임. 1페이지를 0으로 취급.
+        Pageable pageable = PageRequest.of(page - 1, size, sortBy);
 
-        List<LearningActivity> source
-                = (ownerId != null) ? repository.findByOwnerId(ownerId) : repository.findAll();
+        return (ownerId != null)
+                ? repository.findByOwnerId(ownerId, pageable)
+                : repository.findAll(pageable);
 
-        return source.stream()
-                .sorted(comparator)
-                .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
-                .limit(size)
-                .toList();
+
     }
 
     public LearningActivity get(Long id) {
@@ -119,6 +116,11 @@ public class ActivityService {
             throw new ActivityNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public Slice<LearningActivity> sliceByVisibility(Visibility visibility, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
+        return repository.findByVisibility(visibility, pageable);
     }
 }
 

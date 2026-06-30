@@ -4,6 +4,7 @@ import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.dto.response.AuditLogResponse;
 import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
@@ -165,6 +166,22 @@ public class ActivityController implements ActivityControllerDocs {
 
     }
 
+    // 활동 변경 내역 조회 (최근순)
+    @GetMapping("/history")
+    public ResponseEntity<List<AuditLogResponse>> history() {
+        List<AuditLogResponse> list = activityService.history().stream()
+                .map(AuditLogResponse::from)
+                .toList();
+
+        return ResponseEntity.ok().body(list);
+    }
+
+    // 트랜잭션 원자성 시연 - 활동 등록 (활동 저장 + 이력 기록)을 한 트랜잭션
+    @PostMapping("/demo-atomic")
+    public ResponseEntity<String> demoAtomic(@RequestParam(defaultValue = "false") boolean fail) {
+        activityService.demoAtomicRegister(fail); // fail = true면 예외를 일부러 발생 -> 롤백
+        return ResponseEntity.ok().body("활동과 이력이 한 트랜잭션으로 저장되었습니다.");
+    }
 
 
 

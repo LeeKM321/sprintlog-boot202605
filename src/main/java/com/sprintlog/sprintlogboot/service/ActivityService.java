@@ -2,13 +2,19 @@ package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.Visibility;
+import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
+import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -45,6 +51,74 @@ public class ActivityService {
     @Transactional
     public void deleteByTitleAndCategory(String title, ActivityCategory category) {
         repository.deleteByTitleAndCategoryWithJPQL(title, category);
+    }
+
+    public List<LearningActivity> list(String sort, int page, int size, Long ownerId) {
+        Comparator<LearningActivity> comparator = switch (sort) {
+            case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
+            case "title" -> Comparator.comparing(LearningActivity::getTitle);
+            default -> Comparator.comparing(LearningActivity::getId);
+        };
+
+        List<LearningActivity> source
+                = (ownerId != null) ? repository.findByOwnerId(ownerId) : repository.findAll();
+
+        return source.stream()
+                .sorted(comparator)
+                .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
+                .limit(size)
+                .toList();
+    }
+
+    public LearningActivity get(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ActivityNotFoundException(id));
+    }
+
+
+    public LearningActivity create(CreateActivityRequest request, String savedFileName) {
+        LearningActivity activity = toActivity(request);
+        activity.attachFile(savedFileName);
+        return repository.save(activity);
+    }
+
+
+    // 평탄화 후 — 하위 타입 생성 switch 가 사라졌다.
+    // 종류(type)와 종류별 필드를 그대로 단일 생성자에 넘기면 된다(엔티티가 category 로 구분).
+    private LearningActivity toActivity(CreateActivityRequest request) {
+        LearningActivity activity = new LearningActivity(
+                request.type(), request.title(), request.minutes(), request.visibility(),
+                request.instructorName(), request.completionRate(), request.bookTitle());
+
+        if (request.tags() != null) {
+            request.tags().forEach(activity::addTag);
+        }
+        return activity;
+    }
+
+    @Transactional
+    public LearningActivity update(Long id, @Valid UpdateActivityRequest request) {
+        LearningActivity activity = repository.findById(id)
+                .orElseThrow(() -> new ActivityNotFoundException(id));
+
+        activity.changeTitle(request.title());
+        if (request.visibility() == Visibility.PUBLIC) {
+            activity.openToPublic();
+        } else {
+            activity.hideFromPublic();
+        }
+        // JPA가 적용된 상태에서의 update는 findById로 조회해 온 Entity를 setter로 변경
+        // 변경 후 명시적으로 save()를 호출하면 영속성 컨텍스트의 변경 감지(dirty checking)에 의해 update 쿼리가 날아감
+        return repository.save(activity);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        // 해당 id에 대한 데이터 존재 여부 확인
+        if (!repository.existsById(id)) {
+            throw new ActivityNotFoundException(id);
+        }
+        repository.deleteById(id);
     }
 }
 

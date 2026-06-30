@@ -84,11 +84,6 @@ public interface ActivityControllerDocs {
     @RequestMapping(value = "/summary", method = RequestMethod.POST)
     public ResponseEntity<ActivityDashboard.Summary> getSummary();
 
-    // 태그로 활동을 필터링
-    @GetMapping("/search")
-    public ResponseEntity<List<LearningActivity>> searchByTag(@RequestParam String tag,
-                                                              @RequestParam String name,
-                                                              @RequestParam int age);
 
     //  변경 작업: -- 생성(POST) / 수정(PUT) / 삭제(DELETE) ---
     @PostMapping

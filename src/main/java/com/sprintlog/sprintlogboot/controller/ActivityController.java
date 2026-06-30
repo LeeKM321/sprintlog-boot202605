@@ -183,6 +183,13 @@ public class ActivityController implements ActivityControllerDocs {
         return ResponseEntity.ok().body("활동과 이력이 한 트랜잭션으로 저장되었습니다.");
     }
 
+    // 트랜잭션 원자성 시연 - 활동 등록 (활동 저장 + 이력 기록)을 한 트랜잭션
+    @PostMapping("/demo-propagation")
+    public ResponseEntity<String> demoPropagation(@RequestParam(defaultValue = "false") boolean fail) {
+        activityService.demoPropagation(fail); // fail = true면 예외를 일부러 발생 -> 롤백
+        return ResponseEntity.ok().body("활동 등록을 시도했습니다. (시도 이력은 별도 트랜잭션으로 남습니다.)");
+    }
+
 
 
 

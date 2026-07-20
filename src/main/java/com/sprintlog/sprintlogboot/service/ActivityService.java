@@ -7,6 +7,7 @@ import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
@@ -18,17 +19,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true) // 클래스 레벨에 @Transactional을 설정하면 모든 메서드가 readonly 트랜잭션을 가지게 됩니다.
 public class ActivityService {
 
     private final ActivityRepository repository;
     private final AuditLogRepository auditLogRepository;
     private final AuditService auditService;
-
 
     public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
 
@@ -51,7 +53,6 @@ public class ActivityService {
                 .map(a -> ActivityResponse.from(a))
                 .toList();
     }
-
 
     public Page<LearningActivity> page(String sort, int page, int size, Long ownerId) {
         // 기존에는 정렬 기준을 Comparator로 지정했는데, JPA에서 제공하는 페이징 기능을 사용하기 위해
@@ -98,7 +99,7 @@ public class ActivityService {
         return activity;
     }
 
-    @Transactional
+    @Transactional // 메서드 레벨에 트랜잭션을 걸면 클래스 레벨보다 더 우선시됩니다.
     public LearningActivity update(Long id, @Valid UpdateActivityRequest request) {
         LearningActivity activity = repository.findById(id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
@@ -167,8 +168,16 @@ public class ActivityService {
         }
     }
 
+    @Transactional(rollbackFor = {ActivityArchiveException.class, IOException.class})
+    public void archive(boolean fail) throws ActivityArchiveException {
+        repository.save(new LearningActivity(
+                ActivityCategory.READING, "보관 시연 활동(rollbackFor 없음)", 20, Visibility.PUBLIC, null, null, "보관용 책"));
 
-
+        if (fail) {
+            // 체크 예외 — 기본 롤백 대상이 아니다 → 위 저장은 커밋되어 남는다.
+            throw new ActivityArchiveException("보관 실패(체크 예외) — 하지만 기본 롤백은 안 된다");
+        }
+    }
 }
 
 

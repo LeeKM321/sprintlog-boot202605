@@ -9,6 +9,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -33,7 +35,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ProblemDetail handleBusiness(BusinessException e) {
         ErrorCode ec = e.getErrorCode();
-        log.warn("[{}] {}", ec.getCode(), e.getMessage());
+        // 5xx(우리 서버 문제)는 원인을 확인해야 하니 ERROR + 스택트레이스(에러 객체를 마지막 인자로 전달)
+        if (ec.getStatus().is5xxServerError()) {
+            log.error("[{}] {}", ec.getCode(), e.getMessage(), e);
+        } else {
+            // 4xx(클라이언트 문제)는 예상된 상황이니 WARN 레벨로 간결하게.
+            log.warn("[{}] {}", ec.getCode(), e.getMessage());
+        }
+
         return problem(ec.getStatus(), ec.getCode(), e.getMessage(), ec.getDefaultMessage());
     }
 
@@ -48,8 +57,7 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         });
 
-        ProblemDetail pd
-                = problem(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT.getCode(), "요청 본문의 일부 필드가 유효하지 않습니다.", "입력 검증 실패");
+        ProblemDetail pd = problem(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT.getCode(), "요청 본문의 일부 필드가 유효하지 않습니다.", "입력 검증 실패");
         pd.setProperty("errors", errors);
         return pd;
     }
@@ -57,9 +65,24 @@ public class GlobalExceptionHandler {
     // 400 — JSON 자체가 깨졌거나 enum 에 없는 값 등, 요청 본문을 읽지 못함
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail handleNotReadable(HttpMessageNotReadableException e) {
-        return problem(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT.getCode(),
-                "요청 본문(JSON)을 읽을 수 없습니다. 형식이나 값을 확인하세요.", "요청 본문 오류");
+        return problem(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT.getCode(), "요청 본문(JSON)을 읽을 수 없습니다. 형식이나 값을 확인하세요.", "요청 본문 오류");
     }
+
+    // 404 — 매핑된 핸들러가 없는 경로. 프레임워크가 던지는 NoResourceFoundException → C002
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ProblemDetail handleNoResource(NoResourceFoundException e) {
+        log.warn("없는 경로 요청: {}", e.getResourcePath());
+        return problem(HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                "요청하신 경로를 찾을 수 없습니다.", "경로 없음");
+    }
+
+    // 400 — 경로 변수·쿼리 파라미터의 타입 불일치(예: /activities/abc). 프레임워크 예외 → C001
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return problem(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_INPUT.getCode(),
+                "요청 값 '" + e.getName() + "' 의 형식이 올바르지 않습니다.", "잘못된 요청 파라미터");
+    }
+
 
     // 500 — 그 밖의 예상 못 한 오류. 원본 메시지는 로그에만, 클라이언트엔 안전한 문구만
     @ExceptionHandler(Exception.class)

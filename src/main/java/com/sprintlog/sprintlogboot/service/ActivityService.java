@@ -11,6 +11,10 @@ import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +36,13 @@ public class ActivityService {
     private final AuditLogRepository auditLogRepository;
     private final AuditService auditService;
 
+    // 지표 수집기(Micrometer) - 커스텀 지표를 여기에 등록 후 증감시킨다.
+    private final MeterRegistry meterRegistry;
+
     public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
 
         if (category != null) {
-           return convertToDtoList(repository.findByCategory(category));
+            return convertToDtoList(repository.findByCategory(category));
         }
         if (keyword != null && !keyword.isBlank()) {
             return convertToDtoList(repository.findByTitleContainingIgnoreCase(keyword));
@@ -54,6 +61,7 @@ public class ActivityService {
                 .toList();
     }
 
+    @Timed(value = "sprintlog.activity.find.paging", description = "활동 조회 소요 시간(페이징)")
     public Page<LearningActivity> page(String sort, int page, int size, Long ownerId) {
         // 기존에는 정렬 기준을 Comparator로 지정했는데, JPA에서 제공하는 페이징 기능을 사용하기 위해
         // Sort 타입으로 정렬 기준을 지정
@@ -78,15 +86,45 @@ public class ActivityService {
                 .orElseThrow(() -> new ActivityNotFoundException(id));
     }
 
+    /*
     @Transactional
     public LearningActivity create(CreateActivityRequest request, String savedFileName) {
-        LearningActivity activity = toActivity(request);
-        activity.attachFile(savedFileName);
-        LearningActivity saved = repository.save(activity);
-        log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
-        return saved;
-    }
+        return timer.record(() -> {
+            LearningActivity activity = toActivity(request);
+            activity.attachFile(savedFileName);
+            LearningActivity saved = repository.save(activity);
 
+            // 카테고리별로 태그를 쪼개서 생성된 활동 객체의 개수를 카운팅
+            meterRegistry.counter("sprintlog.activities.created", "category", saved.getCategory().name()).increment();
+
+            // 개수가 아니라 '양'을 누적: 어떤 활동 객체이든 상관 없이 학습한 시간(분)을 누적해서 더해라.
+            meterRegistry.counter("sprintlog.study.minutes.total").increment(saved.getMinutes());
+
+
+            log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
+            return saved;
+        });
+    }
+     */
+
+    @Transactional
+    public LearningActivity create(CreateActivityRequest request, String savedFileName) {
+        return meterRegistry.timer("sprintlog.activity.create.time").record(() -> {
+            LearningActivity activity = toActivity(request);
+            activity.attachFile(savedFileName);
+            LearningActivity saved = repository.save(activity);
+
+            // 카테고리별로 태그를 쪼개서 생성된 활동 객체의 개수를 카운팅
+            meterRegistry.counter("sprintlog.activities.created", "category", saved.getCategory().name()).increment();
+
+            // 개수가 아니라 '양'을 누적: 어떤 활동 객체이든 상관 없이 학습한 시간(분)을 누적해서 더해라.
+            meterRegistry.counter("sprintlog.study.minutes.total").increment(saved.getMinutes());
+
+
+            log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
+            return saved;
+        });
+    }
 
     // 평탄화 후 — 하위 타입 생성 switch 가 사라졌다.
     // 종류(type)와 종류별 필드를 그대로 단일 생성자에 넘기면 된다(엔티티가 category 로 구분).

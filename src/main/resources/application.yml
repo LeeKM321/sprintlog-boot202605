@@ -69,7 +69,7 @@ sprintlog:
     count: 4
   file-directory: /Users/stephen/Desktop/codeit-13th-develop/spring-upload
 
-  storage: local
+  storage: s3
   s3:
     bucket: sprintlog-uploads-8917
     region: ap-northeast-2

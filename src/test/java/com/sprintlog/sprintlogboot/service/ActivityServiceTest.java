@@ -34,6 +34,7 @@ class ActivityServiceTest {
     @Mock ActivityRepository repository;
     @Mock AuditLogRepository auditLogRepository;
     @Mock AuditService auditService;
+    @Mock FileStorage fileStorage;
 
     // 서비스의 create는 timer가 걸려 있음 -> MeterRegistry의 timer는 실제로 동작해야 합니다. (Mock 안됨!)
     // @Spy를 걸어서 실제 기능이 동작할 수 있는 객체로 둔다.
@@ -114,7 +115,8 @@ class ActivityServiceTest {
         @DisplayName("존재하면 그 id로 삭제한다. (existsById 확인)")
         void 정상_삭제() {
             // given
-            given(repository.existsById(1L)).willReturn(true);
+            LearningActivity activity = sample();
+            given(repository.findById(1L)).willReturn(Optional.of(activity));
         
             // when
             service.delete(1L);
@@ -126,7 +128,7 @@ class ActivityServiceTest {
         @DisplayName("없으면 예외 - 삭제는 일어나지 않는다.")
         void 없으면_삭제안함() {
             // given
-            given(repository.existsById(999L)).willReturn(false);
+            given(repository.findById(999L)).willReturn(Optional.empty());
         
             // when & then
             assertThatThrownBy(() -> service.delete(999L)).isInstanceOf(ActivityNotFoundException.class);
@@ -197,13 +199,13 @@ class ActivityServiceTest {
     
     @Nested
     @DisplayName("void 협력자 다루기 - willThrow")
-    class voidCollabolator {
+    class VoidCollabolator {
         @Test
         @DisplayName("삭제 협력자가 실패하면 예외가 전파된다.")
         void 삭제_실패_전파() {
             // given
 //            given(repository.deleteById(1L)).willThrow(new RuntimeException("DB 오류")); (x)
-            given(repository.existsById(1L)).willReturn(true);
+            given(repository.findById(1L)).willReturn(Optional.of(sample()));
             // deleteById를 호출하면서 1L을 주면 예외를 일부러 발생 시키겠다.
             willThrow(new RuntimeException("DB 오류")).given(repository).deleteById(1L);
 

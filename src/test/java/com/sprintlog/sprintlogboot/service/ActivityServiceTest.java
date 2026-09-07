@@ -10,21 +10,17 @@ import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ActivityService 슬라이스 테스트 (Mockito)")
@@ -181,7 +177,7 @@ class ActivityServiceTest {
             given(repository.save(any(LearningActivity.class))).willAnswer(inv -> inv.getArgument(0));
 
             // when
-            service.create(request, null);
+            service.create(request, null, authentication.getName());
             ArgumentCaptor<LearningActivity> captor = ArgumentCaptor.forClass(LearningActivity.class);
 
             // then

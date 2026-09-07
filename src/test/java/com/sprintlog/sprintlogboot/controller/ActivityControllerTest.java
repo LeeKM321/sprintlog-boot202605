@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -25,12 +24,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -116,7 +112,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("data 만 보내도 201 + Location (file 은 선택)")
         void 정상이면_201() throws Exception {
-            given(service.create(any(), any())).willReturn(sample);
+            given(service.create(any(), any(), authentication.getName())).willReturn(sample);
 
             MockMultipartFile data = new MockMultipartFile("data", "data.json",
                     MediaType.APPLICATION_JSON_VALUE,
@@ -135,7 +131,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("data + file 이면 201, 파일은 FileService로 저장된다.")
         void 파일첨부_201() throws Exception {
-            given(service.create(any(), any())).willReturn(sample);
+            given(service.create(any(), any(), authentication.getName())).willReturn(sample);
             given(fileService.saveFile(any())).willReturn("saved-uuid.png"); // 저장했다 치고 파일명 반환(가짜)
 
             MockMultipartFile data = new MockMultipartFile("data", "data.json",
@@ -171,7 +167,7 @@ class ActivityControllerTest {
                     .andExpect(jsonPath("$.code").value("C001"))
                     .andExpect(jsonPath("$.errors").exists());
 
-            verify(service, never()).create(any(), any());   // 검증에서 막혀서 서비스까지 못 감.
+            verify(service, never()).create(any(), any(), authentication.getName());   // 검증에서 막혀서 서비스까지 못 감.
         }
     }
 

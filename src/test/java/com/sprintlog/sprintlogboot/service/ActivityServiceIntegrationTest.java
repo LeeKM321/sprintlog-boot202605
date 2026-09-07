@@ -6,7 +6,6 @@ import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ public class ActivityServiceIntegrationTest {
         // create(request, savedFileName) — 파일 없으면 두 번째 인자 null.
         LearningActivity saved = service.create(new CreateActivityRequest(
                 ActivityCategory.LECTURE, "통합 테스트 강의", 60, Visibility.PUBLIC,
-                null, null, "이강사", null, null), null);
+                null, null, "이강사", null, null), null, authentication.getName());
 
         // 진짜 DB 에서 다시 꺼내 확인(가짜라면 못 하는, 실제 영속 검증).
         assertThat(saved.getId()).isNotNull();

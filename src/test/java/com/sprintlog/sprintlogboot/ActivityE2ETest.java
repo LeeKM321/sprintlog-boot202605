@@ -1,6 +1,7 @@
 package com.sprintlog.sprintlogboot;
 
 import com.jayway.jsonpath.JsonPath;
+import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -48,6 +50,8 @@ public class ActivityE2ETest {
     AuditLogRepository auditLogRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     private String base; // 공통 기본 url 담아놓을 용도.
 
@@ -59,6 +63,9 @@ public class ActivityE2ETest {
         auditLogRepository.deleteAll();
         activityRepository.deleteAll();
         userRepository.deleteAll(); // 샘플 데이터를 비워 시작 상태를 일정하게.
+
+        userRepository.save(new User("김춘식", "choon@naver.com", passwordEncoder.encode("password123")));
+
         base = "http://localhost:" + port + "/api/v1/activities";
 
         // 매 테스트마다 업로드 폴더를 비운다.
@@ -111,7 +118,8 @@ public class ActivityE2ETest {
 
         // TestRestTemplate에게 POST요청을 보내라고 명령합니다.
         // postForEntity(요청 보낼 url, 헤더와 바디 정보를 담은 HttpEntity, 응답 본문을 어떤 타입으로 받을 지)
-        return rest.postForEntity(base, new HttpEntity<>(parts, headers), String.class);
+        return rest.withBasicAuth("choon@naver.com", "password123")
+                .postForEntity(base, new HttpEntity<>(parts, headers), String.class);
     }
 
     // data와 file까지 받아서 멀티파트 포장
@@ -131,7 +139,8 @@ public class ActivityE2ETest {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA); // 전체 요청은 multipart/form-data 요청이다.
 
-        return rest.postForEntity(base, new HttpEntity<>(parts, headers), String.class);
+        return rest.withBasicAuth("choon@naver.com", "password123")
+                .postForEntity(base, new HttpEntity<>(parts, headers), String.class);
     }
 
     // 수정(PUT)은 JSON 본문(@RequestBody) 이라 그대로 보낸다.
@@ -226,7 +235,8 @@ public class ActivityE2ETest {
         String one = base + "/" + id;
 
         // 2) 수정(PUT, JSON) → 200. postForEntity 처럼 지름길이 없어 exchange(HttpMethod.PUT, ...) 로 보낸다.
-        ResponseEntity<String> updated = rest.exchange(one, HttpMethod.PUT,
+        ResponseEntity<String> updated = rest.withBasicAuth("choon@naver.com", "password123")
+                .exchange(one, HttpMethod.PUT,
                 json("{\"title\":\"바뀐 제목\",\"visibility\":\"PRIVATE\"}"), String.class);
         assertThat(updated.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((String) JsonPath.read(updated.getBody(), "$.title")).isEqualTo("바뀐 제목");
@@ -236,7 +246,8 @@ public class ActivityE2ETest {
                 .isEqualTo("바뀐 제목");
 
         // 4) 삭제(DELETE) → 204(본문 없음)
-        ResponseEntity<Void> deleted = rest.exchange(one, HttpMethod.DELETE, null, Void.class);
+        ResponseEntity<Void> deleted = rest.withBasicAuth("choon@naver.com", "password123")
+                .exchange(one, HttpMethod.DELETE, null, Void.class);
         assertThat(deleted.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         // 5) 다시 조회 → 이제 없다(404). 삭제까지 전 계층으로 이어져 반영됨.

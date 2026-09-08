@@ -2,12 +2,14 @@ package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
+import com.sprintlog.sprintlogboot.repository.UserRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,8 @@ class ActivityServiceTest {
     @Mock AuditLogRepository auditLogRepository;
     @Mock AuditService auditService;
     @Mock FileStorage fileStorage;
+
+    @Mock UserRepository userRepository; // create가 소유자(현재 사용자)를 조회하므로 UserRepository도 가짜로 채운다.
 
     // 서비스의 create는 timer가 걸려 있음 -> MeterRegistry의 timer는 실제로 동작해야 합니다. (Mock 안됨!)
     // @Spy를 걸어서 실제 기능이 동작할 수 있는 객체로 둔다.
@@ -175,9 +179,11 @@ class ActivityServiceTest {
             // given(repository.save(any(LearningActivity.class))).willReturn(????)
             // 서비스가 repository의 save를 호출하면 호출한 시점에 전달받은 그 인자(엔터티)를 그대로 돌려주어라. -> willAnswer
             given(repository.save(any(LearningActivity.class))).willAnswer(inv -> inv.getArgument(0));
+            given(userRepository.findByEmail("choon@naver.com"))
+                    .willReturn(Optional.of(new User("김춘식", "choon@naver.com", "hashed")));
 
             // when
-            service.create(request, null, authentication.getName());
+            service.create(request, null, "choon@naver.com");
             ArgumentCaptor<LearningActivity> captor = ArgumentCaptor.forClass(LearningActivity.class);
 
             // then
@@ -189,6 +195,7 @@ class ActivityServiceTest {
             assertThat(saved.getCategory()).isEqualTo(ActivityCategory.LECTURE);
             assertThat(saved.getMinutes()).isEqualTo(45);
             assertThat(saved.getInstructorName()).isEqualTo("이강사");
+            assertThat(saved.getOwner().getEmail()).isEqualTo("choon@naver.com");
 
         }
     }

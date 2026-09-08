@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
-                // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
+                // 이 안에서 경로별 인증 및 권한 체크 진행이 가능가
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/me/**").hasRole("USER")

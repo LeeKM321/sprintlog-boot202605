@@ -2,15 +2,18 @@ package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
+import com.sprintlog.sprintlogboot.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.*;
@@ -27,11 +30,18 @@ public class ActivityServiceIntegrationTest {
     ActivityRepository activityRepository;
     @Autowired
     AuditLogRepository auditLogRepository;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void clean() {
         activityRepository.deleteAll();
         auditLogRepository.deleteAll();
+        userRepository.deleteAll();
+        // create의 소유자로 쓸 사용자
+        userRepository.save(new User("김춘식", "choon@naver.com", passwordEncoder.encode("password123")));
     }
 
     @Test
@@ -40,7 +50,7 @@ public class ActivityServiceIntegrationTest {
         // create(request, savedFileName) — 파일 없으면 두 번째 인자 null.
         LearningActivity saved = service.create(new CreateActivityRequest(
                 ActivityCategory.LECTURE, "통합 테스트 강의", 60, Visibility.PUBLIC,
-                null, null, "이강사", null, null), null, authentication.getName());
+                null, null, "이강사", null, null), null, "choon@naver.com");
 
         // 진짜 DB 에서 다시 꺼내 확인(가짜라면 못 하는, 실제 영속 검증).
         assertThat(saved.getId()).isNotNull();

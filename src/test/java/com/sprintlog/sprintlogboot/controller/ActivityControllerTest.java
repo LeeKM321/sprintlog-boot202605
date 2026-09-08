@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ActivityController.class)
 @Import(SecurityConfig.class) // 우리 security 규칙을 테스트에도 적용해라
+// POST/PUT/DELETE 요청은 인증을 요구하게 됐으므로 웹 계층 테스트에 기본 인증 사용자를 부여합니다.
+@WithMockUser
 @DisplayName("ActivityController 웹 계층 테스트")
 class ActivityControllerTest {
 
@@ -112,7 +115,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("data 만 보내도 201 + Location (file 은 선택)")
         void 정상이면_201() throws Exception {
-            given(service.create(any(), any(), authentication.getName())).willReturn(sample);
+            given(service.create(any(), any(), any())).willReturn(sample);
 
             MockMultipartFile data = new MockMultipartFile("data", "data.json",
                     MediaType.APPLICATION_JSON_VALUE,
@@ -131,7 +134,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("data + file 이면 201, 파일은 FileService로 저장된다.")
         void 파일첨부_201() throws Exception {
-            given(service.create(any(), any(), authentication.getName())).willReturn(sample);
+            given(service.create(any(), any(), any())).willReturn(sample);
             given(fileService.saveFile(any())).willReturn("saved-uuid.png"); // 저장했다 치고 파일명 반환(가짜)
 
             MockMultipartFile data = new MockMultipartFile("data", "data.json",
@@ -167,7 +170,7 @@ class ActivityControllerTest {
                     .andExpect(jsonPath("$.code").value("C001"))
                     .andExpect(jsonPath("$.errors").exists());
 
-            verify(service, never()).create(any(), any(), authentication.getName());   // 검증에서 막혀서 서비스까지 못 감.
+            verify(service, never()).create(any(), any(), any());   // 검증에서 막혀서 서비스까지 못 감.
         }
     }
 

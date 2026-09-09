@@ -17,12 +17,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -45,7 +47,9 @@ public class SecurityConfig {
                                                    // AuthenticationEntryPoint, AccessDeniedHandler는 밑에 빈등록 로직이 작성되어 있으므로,
                                                    // securityFilterChain이 호출될 때 등록된 빈이 전달되도록 세팅
                                                    AuthenticationEntryPoint restAuthenticationEntryPoint,
-                                                   AccessDeniedHandler restAccessDeniedHandler) throws Exception {
+                                                   AccessDeniedHandler restAccessDeniedHandler,
+                                                   PersistentTokenRepository persistentTokenRepository,
+                                                   UserDetailsService userDetailsService) throws Exception {
         http
                 // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
                 // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
@@ -108,11 +112,20 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/api/v1/auth/whoami", true)
                         .permitAll() // 로그인 요청은 누구나 접근 가능
                 )
+
+                .rememberMe(remember -> remember
+                        .key("sprintlog-rememberme-secret-key") // 토큰 서명에 사용하는 비밀 키.
+                        .rememberMeParameter("remember-me") // 로그인 폼의 checkbox name과 똑같이 일치
+                        .tokenValiditySeconds(60 * 60 * 24 * 14) // 14일
+                        .tokenRepository(persistentTokenRepository) // 영구 토큰을 저장/조회할 곳
+                        .userDetailsService(userDetailsService) // 쿠키가 유효할 때 email로 사용자를 다시 로드하는 다리 역할 객체
+                )
+
                 .logout(logout -> logout
                         .logoutUrl("/logout")   // POST /logout 으로 로그아웃
                         .logoutSuccessUrl("/login.html?logout") // 로그아웃 완료 후 이동
                         .invalidateHttpSession(true)    // 세션 무효화(기본값이지만 명시)
-                        .deleteCookies("JSESSIONID") // 세션 쿠키 삭제
+                        .deleteCookies("JSESSIONID", "remember-me") // 세션 쿠키 삭제, 자동 로그인 쿠키도 삭제
                 )
 
                 .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)

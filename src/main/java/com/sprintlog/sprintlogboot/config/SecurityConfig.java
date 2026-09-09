@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
 
                 // XSS 방어를 돕는 보안 응답 헤더 - Content-Security-Policy
-                // default-src 'self' = 기본적으로 같은 출처의 리소스만 로드 허용 -> 외부 악성 스트립트 주입을 완화.
+                // default-src 'self' = 기본적으로 같은 출처의 리소스만 로드 허용 -> 외부 악성 스크립트 주입을 완화.
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
                 )
@@ -76,6 +76,18 @@ public class SecurityConfig {
 //                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) -> JWT는 세션 안씁니다.
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                                 .invalidSessionUrl("/login.html?expired")
+                                // 세션 ID만 변경하고 세션 객체는 그대로 유지
+                                .sessionFixation(fixation -> fixation.changeSessionId())
+//                                .sessionFixation(fixation -> fixation.migrateSession()) // 새 세션을 생성해서 기존 세션의 모든 속성을 복사한 후 기존 세션을 무효화
+//                                .sessionFixation(fixation -> fixation.newSession()) // 새 세션을 생성, 기존 데이터는 유지되지 않음!
+//                                .sessionFixation(fixation -> fixation.none()) // 사용하지 마세요. 아무것도 안합니다.
+
+                                // 동시성 관련 설정은 이 블록 안에서 작성한다.
+                                .sessionConcurrency(concurrency -> concurrency
+                                        .maximumSessions(1) // 한 사용자 당 최대 세션 수
+                                        .maxSessionsPreventsLogin(false) // false: 새 로그인 시 이전 세션 만료, true: 이미 로그인 되어 있다면 새 로그인 차단.
+                                        .expiredUrl("/login.html?expired")
+                                )
                 )
                 // 필터단에서 발생한 커스텀 예외 처리 등록 로직
                 .exceptionHandling(ex -> ex

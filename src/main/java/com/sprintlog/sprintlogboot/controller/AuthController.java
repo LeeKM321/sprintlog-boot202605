@@ -1,7 +1,10 @@
 package com.sprintlog.sprintlogboot.controller;
 
+import com.sprintlog.sprintlogboot.dto.response.UserResponse;
+import com.sprintlog.sprintlogboot.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +39,12 @@ public class AuthController {
                 "authenticationType", authentication.getClass().getSimpleName()
         );
     }
+
+    @GetMapping("/me")
+    public UserResponse me(@AuthenticationPrincipal CustomUserDetails principal) {
+        return UserResponse.from(principal.getUser());
+    }
+
 
 }
 

@@ -107,6 +107,11 @@ public class JwtProvider {
         return properties.getAccessTokenValidity().toSeconds();
     }
 
+    public Long getUserId(Claims claims) {
+        Number uid = claims.get(CLAIM_USER_ID, Number.class);
+        return uid == null ? null : uid.longValue();
+    }
+
 }
 
 

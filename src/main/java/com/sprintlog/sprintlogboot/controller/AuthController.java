@@ -2,8 +2,7 @@ package com.sprintlog.sprintlogboot.controller;
 
 import com.sprintlog.sprintlogboot.dto.request.LoginRequest;
 import com.sprintlog.sprintlogboot.dto.response.TokenResponse;
-import com.sprintlog.sprintlogboot.dto.response.UserResponse;
-import com.sprintlog.sprintlogboot.security.CustomUserDetails;
+import com.sprintlog.sprintlogboot.security.JwtPrincipal;
 import com.sprintlog.sprintlogboot.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,8 +46,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public UserResponse me(@AuthenticationPrincipal CustomUserDetails principal) {
-        return UserResponse.from(principal.getUser());
+    public Map<String, JwtPrincipal> me(@AuthenticationPrincipal JwtPrincipal principal) {
+        return Map.of("data", principal);
     }
 
     @PostMapping("/login")

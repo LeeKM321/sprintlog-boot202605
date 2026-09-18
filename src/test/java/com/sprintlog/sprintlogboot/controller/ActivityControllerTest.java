@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.BDDMockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -133,7 +134,7 @@ class ActivityControllerTest {
                     {"category":"LECTURE","title":"스프링 강의","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
                     """.getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data))
+            mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
                     .andExpect(status().isCreated())
                     .andExpect(header().string("Location", "/api/activities/1"))
                     .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -158,7 +159,7 @@ class ActivityControllerTest {
                     = new MockMultipartFile("file", "proof.png",
                     MediaType.IMAGE_PNG_VALUE, "이미지-바이트-데이터".getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data).file(file))
+            mvc.perform(multipart("/api/v1/activities").file(data).file(file).with(csrf()))
                     .andExpect(status().isCreated())
                     .andExpect(header().string("Location", "/api/activities/1"))
                     .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -175,7 +176,7 @@ class ActivityControllerTest {
                     {"category":"LECTURE","title":"","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
                     """.getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data))
+            mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("C001"))
                     .andExpect(jsonPath("$.errors").exists());
@@ -198,7 +199,7 @@ class ActivityControllerTest {
             // when & then
             mvc.perform(put("/api/v1/activities/1")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"title\":\"새 제목\",\"visibility\":\"PUBLIC\"}"))
+                            .content("{\"title\":\"새 제목\",\"visibility\":\"PUBLIC\"}").with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.title").value("새 제목"));
         }
@@ -212,7 +213,7 @@ class ActivityControllerTest {
             // when & then
             mvc.perform(put("/api/v1/activities/999")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"title\":\"x\",\"visibility\":\"PUBLIC\"}"))
+                            .content("{\"title\":\"x\",\"visibility\":\"PUBLIC\"}").with(csrf()))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("A001"));
 
@@ -228,7 +229,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("성공하면 204 (본문 없음)")
         void 삭제_204() throws Exception {
-            mvc.perform(delete("/api/v1/activities/1"))
+            mvc.perform(delete("/api/v1/activities/1").with(csrf()))
                     .andExpect(status().isNoContent());
 
             verify(service).delete(1L);
@@ -239,7 +240,7 @@ class ActivityControllerTest {
         void 없으면_404() throws Exception {
             willThrow(new ActivityNotFoundException(999L)).given(service).delete(999L);
 
-            mvc.perform(delete("/api/v1/activities/999"))
+            mvc.perform(delete("/api/v1/activities/999").with(csrf()))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("A001"));
         }

@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 
 /*
 이 클래스가 JWT의 전부를 담당한다. (생성 / 검증 / 추출)
@@ -22,6 +23,9 @@ import java.time.Instant;
 @Component
 @Slf4j
 public class JwtProvider {
+
+    // 이메일은 변경 가능성이 열려 있으므로, 변하지 않는 내부 식별자를 따로 싣는다. (PK)
+    public static final String CLAIM_USER_ID = "uid";
 
     public static final String CLAIM_ROLE = "role";
     private final JwtProperties properties;
@@ -38,7 +42,7 @@ public class JwtProvider {
 
     // Access Token 생성
     // 페이로드: sub(사용자 이름), role(역할), iss(발급자), iat(발급 시간), exp(만료 시간)
-    public String createAccessToken(String username, Role role) {
+    public String createAccessToken(Long userId, String username, Role role) {
         Instant now = clock.instant();
         Instant expiry = now.plus(properties.getAccessTokenValidity());
 
@@ -46,7 +50,7 @@ public class JwtProvider {
                 .subject(username)
                 // 여러 개의 커스텀 claim을 넣을 때는 .claims(Map으로 포장)
 //                .claims(Map.of(CLAIM_ROLE, role.name(), "address", "seoul", "phone", "010-1234-5678"))
-                .claim(CLAIM_ROLE, role.name())
+                .claims(Map.of(CLAIM_ROLE, role.name(), CLAIM_USER_ID, userId))
                 .issuer(properties.getIssuer())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
@@ -96,6 +100,11 @@ public class JwtProvider {
     // 이미 검증된 Claims에서 역할 추출
     public Role getRole(Claims claims) {
         return Role.valueOf(claims.get(CLAIM_ROLE, String.class));
+    }
+
+    // 토큰의 유효시간을 초로 리턴
+    public long getAccessTokenValiditySeconds() {
+        return properties.getAccessTokenValidity().toSeconds();
     }
 
 }

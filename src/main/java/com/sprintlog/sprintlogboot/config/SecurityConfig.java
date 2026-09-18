@@ -13,7 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -66,9 +68,8 @@ public class SecurityConfig {
                 // 이 안에서 경로별 인증 및 권한 체크 진행이 가능가
                 .authorizeHttpRequests(auth -> auth
                         // ── 공개(permitAll) — 로그인 전에도 되어야 하는 것들 ──
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf-token").permitAll()  // CSRF 토큰 발급
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()           // 회원가입
-                        .requestMatchers("/login", "/logout").permitAll()                        // 로그인·로그아웃 처리
+                        .requestMatchers("/api/v1/auth/login").permitAll()                        // 로그인 처리
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/whoami").permitAll()       // 익명 확인용 데모
                         .requestMatchers(HttpMethod.GET, "/api/v1/activities/**", "/api/activities/**").permitAll() // 활동 조회는 공개(SprintLog 도메인)
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**").permitAll() // 정적 리소스
@@ -109,6 +110,11 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
     /*

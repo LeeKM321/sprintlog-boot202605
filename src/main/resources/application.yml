@@ -74,6 +74,7 @@ sprintlog:
   jwt:
     secret: ${JWT_SECRET:sprintlog-jwt-secret-key-32bytes!}
     access-token-validity: 10m
+    refresh-token-validity: 14d
     issuer: sprintlog
 
 

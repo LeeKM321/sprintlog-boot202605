@@ -17,4 +17,6 @@ public class JwtProperties {
 
     private String issuer = "sprintlog";
 
+    private Duration refreshTokenValidity = Duration.ofDays(14);
+
 }

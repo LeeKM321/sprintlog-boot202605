@@ -1,11 +1,14 @@
 package com.sprintlog.sprintlogboot.controller;
 
+import com.sprintlog.sprintlogboot.config.AppConfig;
 import com.sprintlog.sprintlogboot.config.SecurityConfig;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
+import com.sprintlog.sprintlogboot.security.JwtAuthenticationFilter;
+import com.sprintlog.sprintlogboot.security.JwtProvider;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileService;
@@ -36,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ActivityController.class)
-@Import(SecurityConfig.class) // 우리 security 규칙을 테스트에도 적용해라
+@Import({SecurityConfig.class, AppConfig.class, JwtProvider.class, JwtAuthenticationFilter.class}) // 우리 security 규칙을 테스트에도 적용해라
 // POST/PUT/DELETE 요청은 인증을 요구하게 됐으므로 웹 계층 테스트에 기본 인증 사용자를 부여합니다.
 @WithMockUser
 @DisplayName("ActivityController 웹 계층 테스트")
@@ -134,7 +137,7 @@ class ActivityControllerTest {
                     {"category":"LECTURE","title":"스프링 강의","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
                     """.getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
+            mvc.perform(multipart("/api/v1/activities").file(data))
                     .andExpect(status().isCreated())
                     .andExpect(header().string("Location", "/api/activities/1"))
                     .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -159,7 +162,7 @@ class ActivityControllerTest {
                     = new MockMultipartFile("file", "proof.png",
                     MediaType.IMAGE_PNG_VALUE, "이미지-바이트-데이터".getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data).file(file).with(csrf()))
+            mvc.perform(multipart("/api/v1/activities").file(data).file(file))
                     .andExpect(status().isCreated())
                     .andExpect(header().string("Location", "/api/activities/1"))
                     .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -176,7 +179,7 @@ class ActivityControllerTest {
                     {"category":"LECTURE","title":"","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
                     """.getBytes());
 
-            mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
+            mvc.perform(multipart("/api/v1/activities").file(data))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("C001"))
                     .andExpect(jsonPath("$.errors").exists());
@@ -199,7 +202,7 @@ class ActivityControllerTest {
             // when & then
             mvc.perform(put("/api/v1/activities/1")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"title\":\"새 제목\",\"visibility\":\"PUBLIC\"}").with(csrf()))
+                            .content("{\"title\":\"새 제목\",\"visibility\":\"PUBLIC\"}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.title").value("새 제목"));
         }
@@ -213,7 +216,7 @@ class ActivityControllerTest {
             // when & then
             mvc.perform(put("/api/v1/activities/999")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"title\":\"x\",\"visibility\":\"PUBLIC\"}").with(csrf()))
+                            .content("{\"title\":\"x\",\"visibility\":\"PUBLIC\"}"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("A001"));
 
@@ -229,7 +232,7 @@ class ActivityControllerTest {
         @Test
         @DisplayName("성공하면 204 (본문 없음)")
         void 삭제_204() throws Exception {
-            mvc.perform(delete("/api/v1/activities/1").with(csrf()))
+            mvc.perform(delete("/api/v1/activities/1"))
                     .andExpect(status().isNoContent());
 
             verify(service).delete(1L);
@@ -240,7 +243,7 @@ class ActivityControllerTest {
         void 없으면_404() throws Exception {
             willThrow(new ActivityNotFoundException(999L)).given(service).delete(999L);
 
-            mvc.perform(delete("/api/v1/activities/999").with(csrf()))
+            mvc.perform(delete("/api/v1/activities/999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("A001"));
         }

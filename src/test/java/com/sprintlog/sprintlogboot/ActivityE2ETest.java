@@ -5,7 +5,6 @@ import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
-import com.sprintlog.sprintlogboot.support.CsrfTestSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -114,13 +113,8 @@ public class ActivityE2ETest {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("data", dataPart);
 
-        String csrf = csrfToken();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA); // 전체 요청은 multipart/form-data 요청이다.
-        headers.add(HttpHeaders.COOKIE, "XSRF-TOKEN=" + csrf);
-        headers.add("X-XSRF-TOKEN", csrf);
-
 
         // TestRestTemplate에게 POST요청을 보내라고 명령합니다.
         // postForEntity(요청 보낼 url, 헤더와 바디 정보를 담은 HttpEntity, 응답 본문을 어떤 타입으로 받을 지)
@@ -162,10 +156,10 @@ public class ActivityE2ETest {
 //        headers.add(CsrfTestSupport.HEADER_NAME, t);
 //    }
 
-    private String csrfToken() {
-        ResponseEntity<Void> r = rest.getForEntity(base + "/api/v1/auth/csrf-token", Void.class);
-        return com.sprintlog.sprintlogboot.support.CsrfTestSupport.cookieValue(r.getHeaders(), "XSRF-TOKEN");
-    }
+//    private String csrfToken() {
+//        ResponseEntity<Void> r = rest.getForEntity(base + "/api/v1/auth/csrf-token", Void.class);
+//        return com.sprintlog.sprintlogboot.support.CsrfTestSupport.cookieValue(r.getHeaders(), "XSRF-TOKEN");
+//    }
 
     @Test
     @DisplayName("생성->조회 왕복 - POST로 만든 활동을 그 Location으로 다시 GET 하면 같은 활동이 온다.")

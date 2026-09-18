@@ -25,7 +25,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SessionRegistry sessionRegistry;
 
     @Transactional
     public UserResponse register(SignUpRequest request) {
@@ -53,12 +52,13 @@ public class UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         user.chageRole(newRole);
 
-        expireSessionsOf(email);
+//        expireSessionsOf(email);
 
         User saved = userRepository.save(user);
         return UserResponse.from(saved);
     }
 
+    /*
     private void expireSessionsOf(String email) {
         for (Object principal : sessionRegistry.getAllPrincipals()) {
             if (principal instanceof CustomUserDetails details
@@ -67,8 +67,8 @@ public class UserService {
                 sessions.forEach(SessionInformation::expireNow);
             }
         }
-
     }
+     */
 
 
 }

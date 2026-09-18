@@ -47,15 +47,6 @@ public class AuthController {
         return UserResponse.from(principal.getUser());
     }
 
-    @GetMapping("/csrf-token")
-    public ResponseEntity<Object> csrfToken(CsrfToken csrfToken) {
-        csrfToken.getToken();
-        // 내용은 딱히 없고, csrf토큰을 한번 더 가져오라는 명령을 내립니다.
-        // 이 요청이 들어오는 과정에서 필터가 동작해 자동으로 쿠키를 생성합니다.
-        return ResponseEntity.noContent().build();
-    }
-
-
 }
 
 

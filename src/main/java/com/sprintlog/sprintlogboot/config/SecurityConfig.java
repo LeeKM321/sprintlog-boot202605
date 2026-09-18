@@ -126,8 +126,19 @@ public class SecurityConfig {
     // 미인증(401) 응답을 ProblemDetail JSON으로 커스텀할 수 있는 객체.
     @Bean
     AuthenticationEntryPoint restAuthenticationEntryPoint(ObjectMapper objectMapper) {
-        return (request, response, authException) ->
-                writeProblem(objectMapper, response, HttpStatus.UNAUTHORIZED, "AUTH_401", "인증이 필요합니다. 로그인 후 다시 시도하세요.");
+        return (request, response, authException) -> {
+            Object jwtError = request.getAttribute(JwtAuthenticationFilter.ATTR_JWT_ERROR);
+            if (JwtAuthenticationFilter.ERROR_EXPIRED.equals(jwtError)) {
+                writeProblem(objectMapper, response, HttpStatus.UNAUTHORIZED,
+                        "AUTH_401_EXPIRED", "토큰이 만료되었습니다. 다시 로그인해 주세요.");
+            } else if (JwtAuthenticationFilter.ERROR_INVALID.equals(jwtError)) {
+                writeProblem(objectMapper, response, HttpStatus.UNAUTHORIZED,
+                        "AUTH_401_INVALID", "유효하지 않은 토큰입니다.");
+            } else {
+                writeProblem(objectMapper, response, HttpStatus.UNAUTHORIZED,
+                        "AUTH_401", "인증이 필요합니다. 로그인 후 다시 시도하세요.");
+            }
+        };
     }
 
     // 권한 부족(403) 응답을 ProblemDetail JSON으로 커스텀할 수 있는 객체.

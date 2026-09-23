@@ -21,26 +21,26 @@ public class NotificationService {
         gateway.send(channel, message);
     }
 
-    @Async
+    @Async("notificationExecutor")
     public void sendAsync(String channel, String message) {
         log.info("[비동기 void] {} - 일꾼 {}", channel, Thread.currentThread().getName());
         gateway.send(channel, message);
     }
 
-    @Async
+    @Async("notificationExecutor")
     public CompletableFuture<String> sendAsyncWithResult(String channel, String message) {
         log.info("[비동기 결과] {} - 일꾼 {}", channel, Thread.currentThread().getName());
         gateway.send(channel, message);
         return CompletableFuture.completedFuture(channel + " 발송 완료");
     }
 
-    @Async
+    @Async("notificationExecutor")
     public void sendAsyncThatFails(String channel, String message) {
         log.info("[비동기 예외] 알림 실패 {} - 일꾼 {}", channel, Thread.currentThread().getName());
         throw new NotificationFailedException(channel + " 발송 실패(흉내)");
     }
 
-    @Async
+    @Async("notificationExecutor")
     public CompletableFuture<String> sendAsyncWithResultThatFails(String channel, String message) {
         log.info("[비동기 실패, 결과] {} - 일꾼 {}", channel, Thread.currentThread().getName());
         throw new NotificationFailedException(channel + " 발송 실패(흉내)");

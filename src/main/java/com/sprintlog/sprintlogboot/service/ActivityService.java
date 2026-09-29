@@ -4,6 +4,7 @@ import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.event.ActivityCreatedEvent;
 import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
@@ -14,6 +15,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,8 @@ public class ActivityService {
 
     // 지표 수집기(Micrometer) - 커스텀 지표를 여기에 등록 후 증감시킨다.
     private final MeterRegistry meterRegistry;
+
+    private final ApplicationEventPublisher events;
 
     public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
 
@@ -126,8 +130,12 @@ public class ActivityService {
             // 개수가 아니라 '양'을 누적: 어떤 활동 객체이든 상관 없이 학습한 시간(분)을 누적해서 더해라.
             meterRegistry.counter("sprintlog.study.minutes.total").increment(saved.getMinutes());
 
-
             log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
+
+            // 활동이 등록되었다는 사실만 알린다. 알림을 보낼지 통계를 고칠지는 듣는 쪽의 몫이다.
+            events.publishEvent(new ActivityCreatedEvent(
+                    saved.getId(), owner.getId(), saved.getTitle(), saved.getMinutes(), saved.getStudiedOn()
+            ));
             return saved;
         });
     }

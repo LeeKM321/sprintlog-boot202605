@@ -5,6 +5,7 @@ import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
+import com.sprintlog.sprintlogboot.repository.WeeklyGoalRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class DataInitializer {
     private final UserRepository userRepository;
 
     private final AuditLogRepository auditLogRepository;
+    private final WeeklyGoalRepository goalRepository;
 
     // 비밀번호 암호화를 위한 빈 주입
     private final PasswordEncoder passwordEncoder;
@@ -34,7 +36,6 @@ public class DataInitializer {
     public void loadSampleData() {
 
         log.info("[lifecycle] @PostConstruct — {}", properties.getWelcomeMessage());
-        System.out.println("메롱메롱");
 
         if (!properties.getSampleData().isEnabled()) {
             log.info("[lifecycle] sample-data.enabled = false - 적재 건너뜀!");
@@ -56,6 +57,10 @@ public class DataInitializer {
             choon.getActivities().add(l1);
             choon.getActivities().add(l2);
             userRepository.save(choon);
+
+            WeeklyGoal choonGoal = new WeeklyGoal(60);
+            choonGoal.assignUser(choon);
+            goalRepository.save(choonGoal);
 
 
             User hong = new User("홍길동", "hong@gmail.com", passwordEncoder.encode("hong123"));

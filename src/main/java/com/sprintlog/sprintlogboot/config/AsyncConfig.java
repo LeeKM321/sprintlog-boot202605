@@ -1,7 +1,11 @@
 package com.sprintlog.sprintlogboot.config;
 
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -9,7 +13,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableAsync
-public class AsyncConfig {
+@RequiredArgsConstructor
+public class AsyncConfig implements AsyncConfigurer {
+
+    private final AsyncExceptionHandler asyncExceptionHandler;
+
+    @Override
+    public @Nullable AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        return asyncExceptionHandler;
+    }
 
     // 알림 전용 풀
     @Bean("notificationExecutor")

@@ -39,6 +39,7 @@ public class ActivityController implements ActivityControllerDocs {
     private final ActivityDashboard dashboard;
     private final FileStorage fileService;
     private final ActivityService activityService;
+    private final CachedDashboardService cachedDashboard;
 
     // 모든 활동 목록(페이징)
     @GetMapping
@@ -96,7 +97,7 @@ public class ActivityController implements ActivityControllerDocs {
     // 활동 수 요약 정보 (전체 / 강의 / 실습 / 독서) -> ActivityDashboard
     @RequestMapping(value = "/summary", method = RequestMethod.GET)
     public ResponseEntity<ActivityDashboard.Summary> getSummary() {
-        return ResponseEntity.ok().body(dashboard.summarize());
+        return ResponseEntity.ok().body(cachedDashboard.summarize());
     }
 
     // -------------------------------------------------------------------------------------

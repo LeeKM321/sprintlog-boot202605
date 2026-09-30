@@ -2,11 +2,13 @@ package com.sprintlog.sprintlogboot.service;
 
 
 import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
+import com.sprintlog.sprintlogboot.config.CacheConfig;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -23,6 +25,7 @@ public class ActivityDashboard {
     /**
      * 카테고리별 활동 수를 세어 Summary를 만들자.
      */
+    @Cacheable(CacheConfig.ACTIVITY_SUMMARY)
     @LogExecutionTime
     public Summary summarize() {
 
@@ -129,6 +132,8 @@ public class ActivityDashboard {
         return Collections.unmodifiableList(result);
     }
 
+    @Cacheable(value = CacheConfig.ACHIEVEMENT_RATE, key = "#goalMinutes", unless = "#result == 0")
+    @LogExecutionTime
     public int achievementRate(int goalMinutes) {
         WeeklyGoal goal = new WeeklyGoal(goalMinutes);
         int studied = 0;

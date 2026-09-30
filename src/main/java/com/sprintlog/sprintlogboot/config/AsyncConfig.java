@@ -17,6 +17,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class AsyncConfig implements AsyncConfigurer {
 
     private final AsyncExceptionHandler asyncExceptionHandler;
+    private final RequestContextTaskDecorator contextDecorator;
 
     @Override
     public @Nullable AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
@@ -34,6 +35,7 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setAllowCoreThreadTimeOut(false);   // core 2명은 항상 대기시킨다
         executor.setThreadNamePrefix("noti-");       // 로그에서 바로 알아보려고
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.setTaskDecorator(contextDecorator);
         executor.initialize();
         return executor;
     }
@@ -45,6 +47,7 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setMaxPoolSize(2);           // 바빠지면 여기까지
         executor.setQueueCapacity(50);         // 대시보드 관련 기능은 알림 기능보다는 외부 서버에 덜 의존적 -> 대기줄을 좀 더 넉넉하게 잡자.
         executor.setThreadNamePrefix("dash-");       // 로그에서 바로 알아보려고
+        executor.setTaskDecorator(contextDecorator);
         executor.initialize();
         return executor;
     }

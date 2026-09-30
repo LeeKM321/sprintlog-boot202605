@@ -77,7 +77,9 @@ sprintlog:
     refresh-token-validity: 14d
     issuer: sprintlog
 
-
+logging:
+  pattern:
+    level: "%5p [%X{traceId:--}]"
 
 
 

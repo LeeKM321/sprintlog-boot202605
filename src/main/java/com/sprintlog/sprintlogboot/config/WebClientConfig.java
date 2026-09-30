@@ -1,0 +1,29 @@
+package com.sprintlog.sprintlogboot.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Configuration
+public class WebClientConfig {
+
+    @Bean
+    public WebClient slowApiClient(WebClient.Builder builder,
+                                   TraceIdForwardingFilter traceIdForwading,
+                                   @Value("${sprintlog.slow-api.base-url:http://localhost:8081}") String baseUrl) {
+        return builder
+                .baseUrl(baseUrl)
+                .defaultHeader("X-Called-By", "sprintlog")
+                .filter(traceIdForwading)
+                .build();
+    }
+
+}
+
+
+
+
+
+
+

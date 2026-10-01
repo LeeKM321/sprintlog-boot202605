@@ -14,6 +14,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cache.interceptor.CacheInterceptor;
 import org.springframework.cache.interceptor.SimpleKey;
@@ -63,7 +64,7 @@ class CacheBasicsTest {
             //   우리 코드는 한 줄도 안 바뀌었는데 의존성 두 줄이 늘자 여기가 빨간불이 됐다 —
             //   그 빨간불 자체가 '구현체가 갈렸다' 는 증거다.
             //   @Cacheable 을 쓰는 쪽은 아무것도 몰라도 된다는 것이 추상화의 값이다.
-            assertThat(cacheManager).isInstanceOf(ConcurrentMapCacheManager.class);
+            assertThat(cacheManager).isInstanceOf(CaffeineCacheManager.class);
         }
 
         @Test

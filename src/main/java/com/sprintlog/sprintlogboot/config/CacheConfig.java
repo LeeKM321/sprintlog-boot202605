@@ -2,6 +2,7 @@ package com.sprintlog.sprintlogboot.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -35,13 +36,16 @@ public class CacheConfig {
 
     @Bean
     public Caffeine<Object, Object> caffeineConfig(@Value("${sprintlog.cache.max-size}") long maxSize,
-                                                   @Value("${sprintlog.cache.ttl-seconds}") long ttlSeconds) {
+                                                   @Value("${sprintlog.cache.ttl-seconds}") long ttlSeconds,
+                                                   MeterRegistry meterRegistry) {
         return Caffeine.newBuilder()
                 .maximumSize(maxSize)
                 .expireAfterWrite(Duration.ofSeconds(ttlSeconds))
                 .recordStats()
                 .removalListener((Object key, Object value, RemovalCause cause) -> {
                     log.info("[캐시 제거] 키={} 사유={} (쫓겨난 것인가={})", key, cause, cause.wasEvicted());
+
+                    meterRegistry.counter("sprintlog.cache.removals", "cause", cause.name()).increment();
                 });
     }
 

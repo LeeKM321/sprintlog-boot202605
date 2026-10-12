@@ -72,6 +72,9 @@ public class StudyRoomMessageController {
     }
 
     private String nicknameOf(Principal principal, String sessionId) {
+        if (principal instanceof StompUser user) {
+            return user.nickname();
+        }
         if (principal != null) {
             return principal.getName();
         }

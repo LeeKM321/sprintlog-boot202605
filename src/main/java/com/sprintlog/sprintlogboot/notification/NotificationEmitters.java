@@ -28,7 +28,7 @@ public class NotificationEmitters {
 
     /** 연결 하나를 연다 — 장부에 올리고, '연결됨' 을 먼저 보낸다. */
     public SseEmitter connect(Long userId) {
-        SseEmitter emitter = new SseEmitter();
+        SseEmitter emitter = new SseEmitter(timeout.toMillis());
         byUser.computeIfAbsent(userId, id -> new CopyOnWriteArrayList<>()).add(emitter);
         emitter.onCompletion(() -> remove(userId, emitter));
         // 시한이 되면 '정상 종료' 로 닫는다. 이 줄이 없으면 스프링이 시한 초과 예외를 던져

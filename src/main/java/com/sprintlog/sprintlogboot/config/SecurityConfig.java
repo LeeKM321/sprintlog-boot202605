@@ -74,6 +74,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/activities/**", "/api/activities/**").permitAll() // 활동 조회는 공개(SprintLog 도메인)
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**").permitAll() // 정적 리소스
                         .requestMatchers("/h2-console/**", "/my-api").permitAll() // h2 인메모리 데이터베이스 (Swagger도 열어 두세요)
+                        // 처음 웹소켓 핸드셰이크 통로는 열어 두어야 한다. (/ws/echo 등)
+                        .requestMatchers(HttpMethod.GET, "/ws/**").permitAll()
                         // ── 역할 기반 ──
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/me/**").hasRole("USER")

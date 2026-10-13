@@ -78,6 +78,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sse/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/notifications/stream").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/graphiql").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/graphql").permitAll()
                         // ── 역할 기반 ──
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/me/**").hasRole("USER")

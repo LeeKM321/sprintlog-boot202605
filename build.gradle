@@ -45,11 +45,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-graphql'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'io.projectreactor:reactor-test'
 
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+    testImplementation 'org.springframework.graphql:spring-graphql-test'
 
     // [신규] Lombok
     compileOnly 'org.projectlombok:lombok'

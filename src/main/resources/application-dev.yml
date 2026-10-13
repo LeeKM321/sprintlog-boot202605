@@ -17,6 +17,11 @@ spring:
 #      hibernate:
 #        format_sql: true   # SQL 을 보기 좋게 들여쓰기
 
+  # GraphiQL - 쿼리를 써 보고 문서를 탐색하는 브라우저 화면을 활성화
+  graphql:
+    graphiql:
+      enabled: true
+
 sprintlog:
   welcome-message: "SprintLog Boot - DEV 환경 (개발자 모드)"
   sample-data:

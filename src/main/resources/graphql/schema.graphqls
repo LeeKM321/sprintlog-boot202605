@@ -1,0 +1,48 @@
+# SprintLog GraphQL 스키마 — "무엇을 물을 수 있는가" 의 목록(메뉴판).
+# 클라이언트는 여기 적힌 필드 중 필요한 것만 골라 묻는다. 여기 없는 필드는 절대 나가지 않는다.
+
+"읽기 — 조회의 시작점"
+type Query {
+    "활동 목록. 조건은 하나만 쓴다(종류 → 키워드 → 최소 시간 순으로 먼저 온 것)"
+    activities(category: ActivityCategory, keyword: String, minMinutes: Int): [Activity!]!
+
+    "활동 한 건"
+    activity(id: ID!): Activity
+}
+
+"학습 활동 한 건"
+type Activity {
+    id: ID!
+    title: String!
+    minutes: Int!
+    category: ActivityCategory!
+    visibility: Visibility!
+    tags: [String!]!
+    "공부한 날(2026-10-08 모양의 글자)"
+    studiedOn: String
+    "강의일 때만"
+    instructorName: String
+    "실습일 때만(0~100)"
+    completionRate: Int
+    "독서일 때만"
+    bookTitle: String
+    "기록한 사람"
+    owner: User
+}
+
+"사용자 — 공개해도 되는 것만 적는다"
+type User {
+    id: ID!
+    nickname: String!
+}
+
+enum ActivityCategory {
+    LECTURE
+    PRACTICE
+    READING
+}
+
+enum Visibility {
+    PUBLIC
+    PRIVATE
+}

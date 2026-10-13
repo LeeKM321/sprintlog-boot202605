@@ -54,6 +54,8 @@ public class DataInitializer {
                     ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null);
             choon.getActivities().add(l1);
             choon.getActivities().add(l2);
+            l1.assignOwner(choon);
+            l2.assignOwner(choon);
             userRepository.save(choon);
 
             WeeklyGoal choonGoal = new WeeklyGoal(60);
@@ -68,6 +70,8 @@ public class DataInitializer {
                     ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null);
             hong.getActivities().add(l3);
             hong.getActivities().add(l4);
+            l3.assignOwner(hong);
+            l4.assignOwner(hong);
 
             User saved = userRepository.save(hong);
             log.info("[lifecycle] User 저장 완료 - saved id={}, createdAt={}"

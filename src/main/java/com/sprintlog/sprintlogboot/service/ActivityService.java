@@ -43,18 +43,20 @@ public class ActivityService {
     private final ApplicationEventPublisher events;
 
     public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
+        return convertToDtoList(searchActivities(category, keyword, minMinutes));
+    }
 
+    public List<LearningActivity> searchActivities(ActivityCategory category, String keyword, Integer minMinutes) {
         if (category != null) {
-            return convertToDtoList(repository.findByCategory(category));
+            return repository.findByCategory(category);
         }
         if (keyword != null && !keyword.isBlank()) {
-            return convertToDtoList(repository.findByTitleContainingIgnoreCase(keyword));
+            return repository.findByTitleContainingIgnoreCase(keyword);
         }
         if (minMinutes != null) {
-            return convertToDtoList(repository.findLongActivities(minMinutes));
+            return repository.findLongActivities(minMinutes);
         }
-
-        return convertToDtoList(repository.findAll());
+        return repository.findAll();
     }
 
 

@@ -26,17 +26,27 @@ public class StreamTicketService {
 
     /** 이 사용자에게 입장권 한 장. */
     public String issue(Long userId) {
+        return issue(userId, null);
+    }
+
+    public String issue(Long userId, Instant tokenExpiresAt) {
         Instant now = clock.instant();
         tickets.values().removeIf(t -> t.expiresAt().isBefore(now));   // 쓰이지 않고 지난 것 정리
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String ticket = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        tickets.put(ticket, new Ticket(userId, now.plus(TTL)));
+        tickets.put(ticket, new Ticket(userId, now.plus(TTL), tokenExpiresAt));
         return ticket;
     }
 
-    /** 입장권을 쓴다 — 맞으면 사용자 id, 없거나·이미 썼거나·지났으면 빈 값. 한 번 쓰면 사라진다. */
     public Optional<Long> consume(String ticket) {
+        return admit(ticket).map(Admission::userId);
+    }
+
+    /**
+     * 입장권을 쓴다 — 맞으면 사용자 id, 없거나·이미 썼거나·지났으면 빈 값. 한 번 쓰면 사라진다.
+     */
+    public Optional<Admission> admit(String ticket) {
         if (ticket == null) {
             return Optional.empty();
         }
@@ -44,11 +54,12 @@ public class StreamTicketService {
         if (found == null || found.expiresAt().isBefore(clock.instant())) {
             return Optional.empty();
         }
-        return Optional.of(found.userId());
+        return Optional.of(new Admission(found.userId(), found.tokenExpiresAt()));
     }
 
+    public record Admission(Long userId, Instant tokenExpiresAt) {}
 
-    private record Ticket(Long userId, Instant expiresAt) {}
+    private record Ticket(Long userId, Instant expiresAt, Instant tokenExpiresAt) {}
 
 }
 

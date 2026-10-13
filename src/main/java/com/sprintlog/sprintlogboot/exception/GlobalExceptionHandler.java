@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -100,6 +101,11 @@ public class GlobalExceptionHandler {
         log.warn("[AUTH] 로그인 실패 - {}: {}", e.getClass().getSimpleName(), e.getMessage());
         return problem(HttpStatus.UNAUTHORIZED, "AUTH_401_BAD_CREDENTIALS",
                 "이메일 또는 비밀번호가 올바르지 않습니다.", "인증 실패");
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientGone(AsyncRequestNotUsableException e) {
+        log.debug("[SSE] 클라이언트 연결 끊김: {}", e.getMessage());
     }
 
 

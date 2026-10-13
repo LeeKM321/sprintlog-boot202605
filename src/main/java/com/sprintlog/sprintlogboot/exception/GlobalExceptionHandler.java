@@ -38,6 +38,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ProblemDetail handleBusiness(BusinessException e) {
         ErrorCode ec = e.getErrorCode();
+        if (ec.getStatus() == HttpStatus.SERVICE_UNAVAILABLE) {
+            log.warn("[{}] {}", ec.getCode(), e.getMessage());
+        }
         // 5xx(우리 서버 문제)는 원인을 확인해야 하니 ERROR + 스택트레이스(에러 객체를 마지막 인자로 전달)
         if (ec.getStatus().is5xxServerError()) {
             log.error("[{}] {}", ec.getCode(), e.getMessage(), e);

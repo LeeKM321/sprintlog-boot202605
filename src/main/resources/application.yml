@@ -35,6 +35,11 @@ spring:
     cache-names:
       - activitySummary
       - achievementRate
+  http:
+    client:
+      connect-timeout: 1s
+      read-timeout: 2s
+      factory: jdk
 
 server:
   port: 8080
@@ -75,6 +80,8 @@ sprintlog:
     enabled: true
     count: 4
   file-directory: /Users/stephen/Desktop/codeit-13th-develop/spring-upload
+  slow-api:
+    lecture-delay-ms: 3000
 
   # secret: HS256 서명 비밀키. 최소 32바이트(256비트) 이상 - 짧으면 예외 발생!
   # 운영 환경에서는 비밀키 노출 조심! 코드/설정 파일에 두지 않고 환경 변수로 주입 추천.
@@ -93,6 +100,14 @@ resilience4j:
   circuitbreaker:
     instances:
       lectureApi:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 4
+        minimum-number-of-calls: 4
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 1
+
+      lectureCatalog:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 4
         minimum-number-of-calls: 4

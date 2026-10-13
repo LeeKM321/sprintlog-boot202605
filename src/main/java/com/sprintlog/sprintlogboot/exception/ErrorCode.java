@@ -14,6 +14,10 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS("U001", HttpStatus.CONFLICT, "이미 사용중인 이메일입니다."),
     USER_NOT_FOUND("U002", HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
 
+    // ── 바깥 서비스(External) — E로 시작 ─────────────────────────────────
+    LECTURE_PLATFORM_UNAVAILABLE("E001", HttpStatus.SERVICE_UNAVAILABLE, "강의 플랫폼이 지금 응답하지 않습니다. 잠시 후 다시 시도해 주세요."),
+
+
     // ── 공통(Common) — C로 시작 ──────────────────────────────────────
     INVALID_INPUT     ("C001", HttpStatus.BAD_REQUEST,       "입력값이 올바르지 않습니다."),
     RESOURCE_NOT_FOUND("C002", HttpStatus.NOT_FOUND,         "요청하신 경로를 찾을 수 없습니다."),

@@ -10,6 +10,39 @@ type Query {
     activity(id: ID!): Activity
 }
 
+"쓰기 — 등록·수정·삭제의 시작점"
+type Mutation {
+    "활동 등록 — 로그인한 사람이 주인이 된다"
+    createActivity(input: CreateActivityInput!): Activity!
+
+    "활동 수정(제목·공개 여부) — 주인이나 관리자만"
+    updateActivity(id: ID!, input: UpdateActivityInput!): Activity!
+
+    "활동 삭제 — 주인이나 관리자만. 지웠으면 true"
+    deleteActivity(id: ID!): Boolean!
+}
+
+"활동 등록에 넣는 값 — 입력 전용 타입은 type 이 아니라 input 으로 쓴다"
+input CreateActivityInput {
+    category: ActivityCategory!
+    title: String!
+    minutes: Int!
+    visibility: Visibility!
+    tags: [String!]
+    "공부한 날(2026-10-08 모양). 안 주면 오늘"
+    studiedOn: String
+    instructorName: String
+    completionRate: Int
+    bookTitle: String
+}
+
+"활동 수정에 넣는 값"
+input UpdateActivityInput {
+    title: String!
+    visibility: Visibility!
+}
+
+
 "학습 활동 한 건"
 type Activity {
     id: ID!

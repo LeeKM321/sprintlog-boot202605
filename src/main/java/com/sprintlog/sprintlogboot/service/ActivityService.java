@@ -24,6 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +61,23 @@ public class ActivityService {
             return repository.findLongActivities(minMinutes);
         }
         return repository.findAll();
+    }
+
+    // 1. 여러 활동의 주인을 id만 모아서 한번에 가져 온다.
+    // 2. 활동 -> 주인 짝을 지어서 돌려준다 (Map)
+    public Map<LearningActivity, User> ownersOf(List<LearningActivity> activities) {
+        Set<Long> ownerIds = activities.stream()
+                .map(LearningActivity::getOwner)
+                .filter(Objects::nonNull)
+                .map(User::getId)
+                .collect(Collectors.toSet());
+        Map<Long, User> owners = userRepository.findAllById(ownerIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return activities.stream()
+                .filter(activity -> activity.getOwner() != null)
+                .collect(Collectors.toMap(activity -> activity,
+                        activity -> owners.get(activity.getOwner().getId())));
     }
 
 

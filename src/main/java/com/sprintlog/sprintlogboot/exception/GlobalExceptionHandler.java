@@ -3,11 +3,13 @@ package com.sprintlog.sprintlogboot.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -115,6 +117,18 @@ public class GlobalExceptionHandler {
     // 500 — 그 밖의 예상 못 한 오류. 원본 메시지는 로그에만, 클라이언트엔 안전한 문구만
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleException(Exception e) {
+        // 스프링이 던진 예외 중엔 알맞은 상태 코드를 이미 아는 것들이 있다(ErrorResponse — 대개 405 · 415 · 400, 드물게 5xx).
+        //   500 으로 덮으면 클라이언트는 "서버 탓" 으로 읽고 다시 시도한다. 그 상태 코드와 헤더(405 의 Allow 등)를 그대로 돌려준다.
+        if (e instanceof ErrorResponse errorResponse) {
+            HttpStatus status = HttpStatus.valueOf(errorResponse.getStatusCode().value());
+            if (status.is5xxServerError()) {
+                log.error("[HTTP {}] {}", status.value(), e.getMessage(), e);   // 5xx(매핑 실수·시한 초과 등)는 우리가 볼 일 — 스택까지
+            } else {
+                log.warn("[HTTP {}] {}", status.value(), e.getMessage());       // 4xx 는 요청 쪽 잘못 — WARN 한 줄
+            }
+            return problem(status, "HTTP_" + status.value(),
+                    errorResponse.getBody().getDetail(), status.getReasonPhrase());
+        }
         log.error("예상치 못한 서버 오류", e);
         ErrorCode ec = ErrorCode.INTERNAL_ERROR;
         return problem(ec.getStatus(), ec.getCode(), ec.getDefaultMessage(), "서버 오류");

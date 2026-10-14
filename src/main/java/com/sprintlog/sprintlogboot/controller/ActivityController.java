@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -101,7 +102,7 @@ public class ActivityController implements ActivityControllerDocs {
 
     // -------------------------------------------------------------------------------------
     //  변경 작업: -- 생성(POST) / 수정(PUT) / 삭제(DELETE) ---
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EntityModel<ActivityResponse>> create(
             @Valid @RequestPart("data") CreateActivityRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file,

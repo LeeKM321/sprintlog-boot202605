@@ -1,3 +1,5 @@
+certs/
+
 README.md
 .gradle
 build/

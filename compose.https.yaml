@@ -1,0 +1,24 @@
+
+# SprintLog 앱 + PostgreSQL을 한번에 + 네트워크 설정과 볼륨 설정까지 모두 한 파일에 작성합니다.
+services: # 실행할 여러 컨테이너들을 정의
+
+  # SprintLog 어플리케이션
+  app:
+    ports:
+      - "8443:8443"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod,https
+      - SPRINTLOG_CERT_DIR=/app/certs
+    volumes:
+      - ./certs:/app/certs:ro
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,22 @@
+spring:
+  ssl:
+    bundle:
+      pem:
+        sprintlog:
+          keystore:
+            certificate: file:${SPRINTLOG_CERT_DIR:certs}/localhost.pem
+            private-key: file:${SPRINTLOG_CERT_DIR:certs}/localhost-key.pem
+
+server:
+  port: 8443
+  ssl:
+    bundle: sprintlog
+
+management:
+  server:
+    ssl:
+      enabled: false
+
+sprintlog:
+  https:
+    http-port: 8080

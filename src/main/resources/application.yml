@@ -43,6 +43,8 @@ spring:
 
 server:
   port: 8080
+  # 앞단(Nginx)이 붙여준 X-Forwarded-* 헤더를 믿고 원래 요청을 복원한다.
+  forward-headers-strategy: native
 
 management:
   endpoints:
